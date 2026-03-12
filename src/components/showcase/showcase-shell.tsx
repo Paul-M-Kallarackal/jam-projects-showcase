@@ -110,18 +110,18 @@ export function ShowcaseShell({ projects, error }: ShowcaseData) {
               </h1>
               <p className="max-w-3xl text-base leading-relaxed text-foreground/76 md:text-lg">
                 Built for builders to show what they shipped, what it does, and
-                where people can try it. Projects can still come in through
-                Discord with{" "}
+                where people can try it. The main path is through Discord with{" "}
                 <span className="font-semibold text-foreground">
                   /showcase-project
-                </span>
-                , but Discord is not required anymore.
+                </span>{" "}
+                so people in the Jam community can share their work where they
+                already are.
               </p>
               <p className="max-w-3xl text-sm leading-relaxed text-foreground/66 md:text-base">
-                Anyone can post a project here directly through the public
-                submission API. This is a public hobby project with a public
-                repository, and the archive is queryable by title, category, and
-                search terms.
+                If you want to submit directly instead, use the public `curl`
+                request on the right. This is a public hobby project with a
+                public repository, and the archive is queryable by title,
+                category, and search terms.
               </p>
             </div>
 
