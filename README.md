@@ -14,11 +14,16 @@ A public Next.js showcase for Jam builders to submit and share projects through 
 ## Security Defaults
 
 - The app only expects `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- No service-role key is used in this repository
+- The public UI is read-only; inserts happen only through the server-side submission API
 - The public app is read-only by design
 - Supabase RLS allows `select` only for rows where `status = 'published'`
 - No insert, update, or delete policies are opened here
 - Security headers are set in `next.config.ts`
+
+The read-only UI still uses only public env vars. The submission API is server-side and separately requires:
+
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SHOWCASE_API_BEARER_TOKEN`
 
 ## Local Development
 
@@ -41,6 +46,8 @@ If Supabase env values are missing, the app shows a real setup state instead of 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+SHOWCASE_API_BEARER_TOKEN=...
 ```
 
 5. In Supabase, get these values from `Project Settings -> API`:
@@ -59,11 +66,45 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 ```env
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+SHOWCASE_API_BEARER_TOKEN=...
 ```
 
 3. Redeploy after adding the variables.
 
-The app only needs those two public env vars. It does not need a service-role key.
+The browser still only sees the two `NEXT_PUBLIC_...` values. The service-role key and API bearer token stay server-side in Vercel.
+
+## Submission API
+
+The app now exposes a server-side submission endpoint:
+
+`POST /api/submissions`
+
+Required header:
+
+```http
+Authorization: Bearer YOUR_SHOWCASE_API_BEARER_TOKEN
+Content-Type: application/json
+```
+
+Example request body:
+
+```json
+{
+  "project": {
+    "name": "Jam AI Copilot",
+    "description": "A coding copilot for community builders.",
+    "github_url": "https://github.com/you/jam-ai-copilot",
+    "live_url": "https://jam-ai-copilot.example.com",
+    "category": "AI"
+  },
+  "member": {
+    "display_name": "Paul"
+  }
+}
+```
+
+The route validates and normalizes input before insert, only accepts `http` / `https` URLs, creates slugs server-side, and writes through Supabase using the server-side service-role key. The UI renders user content as text rather than HTML, which keeps the public surface safer from stored XSS.
 
 ## Project Shape
 
