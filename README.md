@@ -39,8 +39,9 @@ If Supabase env values are missing, the app shows a real setup state instead of 
 
 1. Create a Supabase project.
 2. Run the SQL in `supabase/migrations/202603120001_projects.sql`.
-3. Copy `.env.example` to `.env.local`.
-4. Fill in:
+3. Run the SQL in `supabase/migrations/202603120002_submission_rate_limits.sql`.
+4. Copy `.env.example` to `.env.local`.
+5. Fill in:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=...
@@ -48,10 +49,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
-5. In Supabase, get these values from `Project Settings -> API`:
+6. In Supabase, get these values from `Project Settings -> API`:
    - `Project URL`
    - `anon` / publishable key
-6. Insert a few rows into `public.projects` with:
+7. Insert a few rows into `public.projects` with:
    - a unique `slug`
    - `status = 'published'`
    - a non-null `published_at`
@@ -70,6 +71,16 @@ SUPABASE_SERVICE_ROLE_KEY=...
 3. Redeploy after adding the variables.
 
 The browser still only sees the two `NEXT_PUBLIC_...` values. The service-role key stays server-side in Vercel.
+
+Optional tuning envs for the public submission API:
+
+```env
+SHOWCASE_RATE_LIMIT_MAX_REQUESTS=8
+SHOWCASE_RATE_LIMIT_WINDOW_SECONDS=3600
+SHOWCASE_RATE_LIMIT_BLOCK_SECONDS=3600
+```
+
+If you omit them, the API defaults to 8 submissions per hour per connection fingerprint and blocks for 1 hour after the limit is exceeded.
 
 ## Submission API
 
@@ -102,6 +113,8 @@ Example request body:
 
 The route validates and normalizes input before insert, only accepts `http` / `https` URLs, creates slugs server-side, and writes through Supabase using the server-side service-role key. The UI renders user content as text rather than HTML, which keeps the public surface safer from stored XSS. Because the endpoint is public, this protects against injection issues but does not by itself prevent spam or abuse.
 
+It also applies a server-side rate limit before insert and returns standard `X-RateLimit-*` headers plus `Retry-After` when the limit is hit.
+
 ## Project Shape
 
 The UI reads these public fields from `public.projects`:
@@ -120,6 +133,6 @@ The UI reads these public fields from `public.projects`:
 
 ## Notes
 
-- This repo is intentionally frontend-first and avoids custom backend routes.
+- This repo is intentionally frontend-first, with one small server-side route for project submissions.
 - If Supabase is configured incorrectly, the app shows the live error instead of masking it with mock data.
 - The showcase search/filtering is client-side in this public build for simplicity.

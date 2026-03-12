@@ -196,8 +196,9 @@ export function ShowcaseShell({ projects, error }: ShowcaseData) {
                   </CardTitle>
                   <CardDescription className="max-w-2xl text-sm leading-relaxed text-foreground/72">
                     Search titles and summaries, or filter by category. Every
-                    project here was intentionally submitted through Discord by
-                    a builder who wanted it showcased.
+                    project here was intentionally submitted by a builder who
+                    wanted it showcased, whether that happened through Discord
+                    or the public API.
                   </CardDescription>
                 </div>
 
