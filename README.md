@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Jam Projects Showcase
 
-## Getting Started
+A public Next.js showcase for published Jam projects, backed by Supabase and locked down with RLS-first defaults.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 App Router
+- TypeScript
+- Tailwind CSS v4
+- shadcn/ui
+- Framer Motion
+- Supabase
+
+## Security Defaults
+
+- The app only expects `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- No service-role key is used in this repository
+- The public app is read-only by design
+- Supabase RLS allows `select` only for rows where `status = 'published'`
+- No insert, update, or delete policies are opened here
+- Security headers are set in `next.config.ts`
+
+## Local Development
+
+Install dependencies and run the app:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+If you do not set Supabase env values, the app automatically uses local demo data so the UI still works.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Supabase Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Create a Supabase project.
+2. Run the SQL in `supabase/migrations/202603120001_projects.sql`.
+3. Copy `.env.example` to `.env.local`.
+4. Fill in:
 
-## Learn More
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+```
 
-To learn more about Next.js, take a look at the following resources:
+5. Insert a few rows into `public.projects` with:
+   - a unique `slug`
+   - `status = 'published'`
+   - a non-null `published_at`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Shape
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The UI reads these public fields from `public.projects`:
 
-## Deploy on Vercel
+- `slug`
+- `title`
+- `summary`
+- `category`
+- `tags`
+- `stack`
+- `project_url`
+- `repository_url`
+- `submitted_by`
+- `is_featured`
+- `published_at`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Notes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- This repo is intentionally frontend-first and avoids custom backend routes.
+- If Supabase is configured incorrectly, the app shows the live error instead of silently masking it.
+- The showcase search/filtering is client-side in this public build for simplicity.
