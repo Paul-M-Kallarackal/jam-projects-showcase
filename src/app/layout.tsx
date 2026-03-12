@@ -20,7 +20,7 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "Jam Projects Showcase",
   description:
-    "A filterable, Supabase-backed showcase for published Jam community projects.",
+    "A warm, searchable showcase for Jam builders to share projects they submitted through Discord.",
 };
 
 export default function RootLayout({

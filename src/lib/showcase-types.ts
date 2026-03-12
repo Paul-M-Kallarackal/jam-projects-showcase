@@ -15,6 +15,5 @@ export interface ShowcaseProject {
 
 export interface ShowcaseData {
   projects: ShowcaseProject[];
-  source: "demo" | "supabase";
   error?: string;
 }

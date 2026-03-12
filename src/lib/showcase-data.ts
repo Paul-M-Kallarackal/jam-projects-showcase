@@ -2,7 +2,6 @@ import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
 
-import { mockProjects } from "@/lib/mock-projects";
 import type { ShowcaseData, ShowcaseProject } from "@/lib/showcase-types";
 
 type ProjectRow = {
@@ -58,8 +57,9 @@ export async function getShowcaseData(): Promise<ShowcaseData> {
 
   if (!supabaseUrl || !supabaseAnonKey) {
     return {
-      projects: mockProjects,
-      source: "demo",
+      projects: [],
+      error:
+        "Supabase is not configured yet. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to load projects.",
     };
   }
 
@@ -85,7 +85,6 @@ export async function getShowcaseData(): Promise<ShowcaseData> {
   if (error) {
     return {
       projects: [],
-      source: "supabase",
       error: error.message,
     };
   }
@@ -94,6 +93,5 @@ export async function getShowcaseData(): Promise<ShowcaseData> {
 
   return {
     projects: rows,
-    source: "supabase",
   };
 }

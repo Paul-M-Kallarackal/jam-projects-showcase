@@ -1,29 +1,27 @@
-import { ExternalLink, Github, Sparkles } from "lucide-react";
+import { ExternalLink, Github } from "lucide-react";
 
-import { IconLinkButton } from "@/components/showcase/icon-link-button";
-import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardFooter,
-  CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import type { ShowcaseProject } from "@/lib/showcase-types";
 import { cn } from "@/lib/utils";
 
 const categoryPanels: Record<string, string> = {
-  AI: "bg-linear-to-br from-accent/35 via-secondary/55 to-card",
-  Automation: "bg-linear-to-br from-muted/65 via-card to-secondary/35",
-  Community: "bg-linear-to-br from-secondary/70 via-card to-accent/20",
-  Devtools: "bg-linear-to-br from-primary/14 via-card to-secondary/30",
-  "Creative Tools": "bg-linear-to-br from-accent/25 via-card to-muted/45",
-  Productivity: "bg-linear-to-br from-muted/50 via-secondary/35 to-card",
+  AI: "bg-linear-to-br from-[#efe0b6] via-[#eadcb8] to-[#f4edd6]",
+  Automation: "bg-linear-to-br from-[#ded4aa] via-[#e9dfbf] to-[#f1ead2]",
+  Community: "bg-linear-to-br from-[#e8ddbf] via-[#f0e6c9] to-[#f7f1de]",
+  Devtools: "bg-linear-to-br from-[#d9d0af] via-[#e6dcc0] to-[#f2ebd5]",
+  "Creative Tools": "bg-linear-to-br from-[#ead7bd] via-[#f1e3cc] to-[#f6efe0]",
+  Productivity: "bg-linear-to-br from-[#e1d8b5] via-[#ece2c6] to-[#f5eed9]",
 };
 
 function formatPublishDate(value?: string | null) {
   if (!value) {
-    return "Draft-safe schema";
+    return "Fresh submission";
   }
 
   return new Intl.DateTimeFormat("en", {
@@ -37,88 +35,63 @@ export function ProjectCard({ project }: { project: ShowcaseProject }) {
   const panelClassName = categoryPanels[project.category] ?? categoryPanels.AI;
 
   return (
-    <Card className="surface-glass h-full border-border/65 bg-card/80 shadow-lg">
-      <div
-        className={cn(
-          "m-4 rounded-4xl border border-white/30 p-5 ring-1 ring-foreground/5",
-          panelClassName
-        )}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground/60">
+    <Card className="surface-glass h-full overflow-hidden border-border/65 bg-card/82 py-0 gap-0 shadow-lg">
+      <div className={cn("flex flex-1 flex-col", panelClassName)}>
+        <div className="flex min-h-[15rem] flex-col justify-between px-5 py-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground/56">
               {project.category}
             </p>
-            <CardTitle className="font-display text-2xl leading-tight text-balance">
+            <CardTitle className="font-display text-3xl leading-tight text-balance">
               {project.title}
             </CardTitle>
+            <p className="mt-4 line-clamp-4 max-w-2xl text-base leading-relaxed text-foreground/78">
+              {project.summary}
+            </p>
           </div>
-          {project.isFeatured ? (
-            <Badge className="gap-1 rounded-full bg-primary text-primary-foreground">
-              <Sparkles className="size-3" />
-              Featured
-            </Badge>
-          ) : null}
         </div>
 
-        <p className="mt-6 max-w-md text-sm leading-relaxed text-foreground/78">
-          {project.summary}
-        </p>
+        <div className="flex-1" />
+
+        <CardContent className="pb-5 pt-5">
+          <div className="flex flex-wrap gap-3">
+            {project.projectUrl ? (
+              <a
+                className={cn(buttonVariants(), "rounded-full")}
+                href={project.projectUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <ExternalLink className="size-4" />
+                Project
+              </a>
+            ) : null}
+            {project.repositoryUrl ? (
+              <a
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "rounded-full border-border/80 bg-background/56"
+                )}
+                href={project.repositoryUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Github className="size-4" />
+                Source repo
+              </a>
+            ) : null}
+          </div>
+        </CardContent>
       </div>
 
-      <CardHeader className="gap-3">
-        <div className="flex flex-wrap gap-2">
-          {project.tags.map((tag) => (
-            <Badge
-              key={`${project.id}-${tag}`}
-              variant="outline"
-              className="rounded-full border-border/70 bg-background/55"
-            >
-              {tag}
-            </Badge>
-          ))}
-        </div>
-      </CardHeader>
-
-      <CardContent className="mt-auto space-y-4">
-        <div className="flex flex-wrap gap-2">
-          {project.stack.map((item) => (
-            <Badge
-              key={`${project.id}-${item}`}
-              variant="secondary"
-              className="rounded-full bg-secondary/65 text-secondary-foreground"
-            >
-              {item}
-            </Badge>
-          ))}
-        </div>
-      </CardContent>
-
-      <CardFooter className="justify-between gap-4 border-border/50 bg-muted/35">
+      <CardFooter className="justify-between gap-4 border-t border-border/35 bg-transparent">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-foreground/88">
-            {project.submittedBy ?? "Jam community"}
+            Submitted by {project.submittedBy ?? "a Jam builder"}
           </p>
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
             {formatPublishDate(project.publishedAt)}
           </p>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          {project.repositoryUrl ? (
-            <IconLinkButton
-              href={project.repositoryUrl}
-              label="Open repository"
-              icon={Github}
-            />
-          ) : null}
-          {project.projectUrl ? (
-            <IconLinkButton
-              href={project.projectUrl}
-              label="Open project"
-              icon={ExternalLink}
-            />
-          ) : null}
         </div>
       </CardFooter>
     </Card>

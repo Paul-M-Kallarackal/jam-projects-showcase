@@ -1,6 +1,6 @@
 # Jam Projects Showcase
 
-A public Next.js showcase for published Jam projects, backed by Supabase and locked down with RLS-first defaults.
+A public Next.js showcase for Jam builders to submit and share projects through Discord.
 
 ## Stack
 
@@ -29,7 +29,7 @@ npm install
 npm run dev
 ```
 
-If you do not set Supabase env values, the app automatically uses local demo data so the UI still works.
+If Supabase env values are missing, the app shows a real setup state instead of fake project data.
 
 ## Supabase Setup
 
@@ -43,10 +43,27 @@ NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 ```
 
-5. Insert a few rows into `public.projects` with:
+5. In Supabase, get these values from `Project Settings -> API`:
+   - `Project URL`
+   - `anon` / publishable key
+6. Insert a few rows into `public.projects` with:
    - a unique `slug`
    - `status = 'published'`
    - a non-null `published_at`
+
+## Vercel Setup
+
+1. Import this repo into Vercel or run `vercel` from the project root.
+2. In Vercel, add:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+```
+
+3. Redeploy after adding the variables.
+
+The app only needs those two public env vars. It does not need a service-role key.
 
 ## Project Shape
 
@@ -67,5 +84,5 @@ The UI reads these public fields from `public.projects`:
 ## Notes
 
 - This repo is intentionally frontend-first and avoids custom backend routes.
-- If Supabase is configured incorrectly, the app shows the live error instead of silently masking it.
+- If Supabase is configured incorrectly, the app shows the live error instead of masking it with mock data.
 - The showcase search/filtering is client-side in this public build for simplicity.
