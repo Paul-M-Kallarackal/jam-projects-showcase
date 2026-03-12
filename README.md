@@ -23,13 +23,15 @@ A public Next.js showcase for Jam builders to submit and share projects, with Di
 The read-only UI still uses only public env vars. The submission API is server-side and separately requires:
 
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `SHOWCASE_BOT_SHARED_SECRET` if you want verified bot submissions to bypass the public rate limit
 
 The submission API is intentionally public, so the current protection model is:
 
 - strict server-side validation and sanitization
 - Supabase service-role inserts that stay server-side only
 - read-only public RLS for published rows
-- request rate limiting before insert
+- request rate limiting before insert for public requests
+- optional signed bot submissions that bypass the public rate limit
 
 ## Local Development
 
@@ -54,6 +56,7 @@ If Supabase env values are missing, the app shows a real setup state instead of 
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
+SHOWCASE_BOT_SHARED_SECRET=...
 ```
 
 6. In Supabase, get these values from `Project Settings -> API`:
@@ -87,7 +90,7 @@ SHOWCASE_RATE_LIMIT_WINDOW_SECONDS=3600
 SHOWCASE_RATE_LIMIT_BLOCK_SECONDS=3600
 ```
 
-If you omit them, the API defaults to 8 submissions per hour per connection fingerprint and blocks for 1 hour after the limit is exceeded.
+If you omit the rate-limit envs, the API defaults to 8 submissions per hour per connection fingerprint and blocks for 1 hour after the limit is exceeded.
 
 ## Submission API
 
@@ -104,6 +107,13 @@ Required header:
 
 ```http
 Content-Type: application/json
+```
+
+Optional headers for verified bot traffic:
+
+```http
+X-Showcase-Timestamp: unix-seconds
+X-Showcase-Bot-Signature: v1=...
 ```
 
 Example request body:
@@ -125,9 +135,9 @@ Example request body:
 
 The endpoint also accepts the bot-style nested payload with `guild`, `channel`, `member`, and `project`, so the Discord bot can post richer metadata without needing a separate backend.
 
-The route validates and normalizes input before insert, only accepts `http` / `https` URLs, creates slugs server-side, and writes through Supabase using the server-side service-role key. The UI renders user content as text rather than HTML, which keeps the public surface safer from stored XSS. Because the endpoint is public, this protects against injection issues but does not by itself prevent spam or abuse from many distinct IPs.
+The route validates and normalizes input before insert, only accepts `http` / `https` URLs, creates slugs server-side, and writes through Supabase using the server-side service-role key. The UI renders user content as text rather than HTML, which keeps the public surface safer from stored XSS. Public requests are rate-limited; verified bot requests can bypass that limiter with the shared secret signature headers.
 
-It also applies a server-side rate limit before insert and returns standard `X-RateLimit-*` headers plus `Retry-After` when the limit is hit. The default policy is:
+It applies a server-side rate limit before insert for unsigned public requests and returns standard `X-RateLimit-*` headers plus `Retry-After` when the limit is hit. The default public policy is:
 
 - `8` submissions per hour per connection fingerprint
 - `1` hour block after the limit is exceeded

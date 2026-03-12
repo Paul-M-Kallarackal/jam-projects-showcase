@@ -46,7 +46,7 @@ security definer
 set search_path = public
 as $$
 declare
-  current_time timestamptz := timezone('utc', now());
+  current_ts timestamptz := now();
   current_row public.submission_rate_limits%rowtype;
   next_reset_at timestamptz;
 begin
@@ -68,9 +68,9 @@ begin
   values (
     p_fingerprint,
     0,
-    current_time,
+    current_ts,
     null,
-    current_time
+    current_ts
   )
   on conflict (fingerprint) do nothing;
 
@@ -80,11 +80,11 @@ begin
   where fingerprint = p_fingerprint
   for update;
 
-  if current_row.blocked_until is not null and current_row.blocked_until > current_time then
+  if current_row.blocked_until is not null and current_row.blocked_until > current_ts then
     allowed := false;
     retry_after_seconds := greatest(
       1,
-      ceil(extract(epoch from (current_row.blocked_until - current_time)))::integer
+      ceil(extract(epoch from (current_row.blocked_until - current_ts)))::integer
     );
     remaining := 0;
     reset_at := current_row.blocked_until;
@@ -92,15 +92,15 @@ begin
     return;
   end if;
 
-  if current_row.window_started_at <= current_time - make_interval(secs => p_window_seconds) then
-    next_reset_at := current_time + make_interval(secs => p_window_seconds);
+  if current_row.window_started_at <= current_ts - make_interval(secs => p_window_seconds) then
+    next_reset_at := current_ts + make_interval(secs => p_window_seconds);
 
     update public.submission_rate_limits
     set
       request_count = 1,
-      window_started_at = current_time,
+      window_started_at = current_ts,
       blocked_until = null,
-      last_seen_at = current_time
+      last_seen_at = current_ts
     where fingerprint = p_fingerprint;
 
     allowed := true;
@@ -112,12 +112,12 @@ begin
   end if;
 
   if current_row.request_count + 1 > p_max_requests then
-    next_reset_at := current_time + make_interval(secs => p_block_seconds);
+    next_reset_at := current_ts + make_interval(secs => p_block_seconds);
 
     update public.submission_rate_limits
     set
       blocked_until = next_reset_at,
-      last_seen_at = current_time
+      last_seen_at = current_ts
     where fingerprint = p_fingerprint;
 
     allowed := false;
@@ -132,7 +132,7 @@ begin
   set
     request_count = request_count + 1,
     blocked_until = null,
-    last_seen_at = current_time
+    last_seen_at = current_ts
   where fingerprint = p_fingerprint
   returning * into current_row;
 

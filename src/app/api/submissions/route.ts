@@ -6,8 +6,10 @@ import {
   createUniqueSlug,
   normalizeSubmissionBody,
 } from "@/lib/showcase-submission";
+import { verifyBotSubmission } from "@/lib/showcase-bot-auth";
 import {
   buildRateLimitHeaders,
+  consumeSubmissionRateLimit,
   getRateLimitConfig,
   getSubmissionFingerprint,
 } from "@/lib/showcase-rate-limit";
@@ -31,6 +33,7 @@ function json(
 export async function POST(request: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const botSharedSecret = process.env.SHOWCASE_BOT_SHARED_SECRET?.trim();
 
   if (!supabaseUrl || !serviceRoleKey) {
     return json(
@@ -42,9 +45,26 @@ export async function POST(request: Request) {
     );
   }
 
+  let rawBody = "";
+  try {
+    rawBody = await request.text();
+  } catch {
+    return json({ error: "Request body must be valid JSON." }, 400);
+  }
+
+  const botVerification = verifyBotSubmission(request, rawBody, botSharedSecret);
+  if (!botVerification.isVerified && botVerification.hasSignatureHeaders) {
+    return json(
+      {
+        error: botVerification.error ?? "Bot verification failed.",
+      },
+      401
+    );
+  }
+
   let body: unknown;
   try {
-    body = await request.json();
+    body = JSON.parse(rawBody);
   } catch {
     return json({ error: "Request body must be valid JSON." }, 400);
   }
@@ -66,47 +86,38 @@ export async function POST(request: Request) {
     },
   });
 
-  const rateLimitConfig = getRateLimitConfig();
-  const fingerprint = getSubmissionFingerprint(request, serviceRoleKey);
-  const { data: rateLimitData, error: rateLimitError } = await supabase.rpc(
-    "consume_submission_rate_limit",
-    {
-      p_fingerprint: fingerprint,
-      p_max_requests: rateLimitConfig.maxRequests,
-      p_window_seconds: rateLimitConfig.windowSeconds,
-      p_block_seconds: rateLimitConfig.blockSeconds,
+  let rateLimitHeaders: HeadersInit | undefined;
+  if (!botVerification.isVerified) {
+    const rateLimitConfig = getRateLimitConfig();
+    const fingerprint = getSubmissionFingerprint(request, serviceRoleKey);
+
+    let rateLimit;
+    try {
+      rateLimit = await consumeSubmissionRateLimit(
+        supabase,
+        fingerprint,
+        rateLimitConfig
+      );
+    } catch (error) {
+      return json(
+        {
+          error: "Could not verify the submission rate limit.",
+          detail: error instanceof Error ? error.message : "Unknown rate limit error.",
+        },
+        500
+      );
     }
-  );
 
-  if (rateLimitError) {
-    return json(
-      {
-        error: "Could not verify the submission rate limit.",
-        detail: rateLimitError.message,
-      },
-      500
-    );
-  }
-
-  const rateLimit = rateLimitData?.[0];
-  if (!rateLimit) {
-    return json(
-      {
-        error: "Could not verify the submission rate limit.",
-      },
-      500
-    );
-  }
-
-  const rateLimitHeaders = buildRateLimitHeaders(rateLimitConfig, rateLimit);
-  if (!rateLimit.allowed) {
-    return json(
-      {
-        error: "Too many submissions from this connection. Please try again later.",
-      },
-      429,
-      rateLimitHeaders
-    );
+    rateLimitHeaders = buildRateLimitHeaders(rateLimitConfig, rateLimit);
+    if (!rateLimit.allowed) {
+      return json(
+        {
+          error: "Too many submissions from this connection. Please try again later.",
+        },
+        429,
+        rateLimitHeaders
+      );
+    }
   }
 
   const slug = await createUniqueSlug(async (candidate) => {
