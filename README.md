@@ -1,6 +1,6 @@
 # Jam Projects Showcase
 
-A public Next.js showcase for Jam builders to submit and share projects through Discord.
+A public Next.js showcase for Jam builders to submit and share projects, with Discord as the main submission path and a direct `curl` fallback for manual posting.
 
 ## Stack
 
@@ -23,6 +23,13 @@ A public Next.js showcase for Jam builders to submit and share projects through 
 The read-only UI still uses only public env vars. The submission API is server-side and separately requires:
 
 - `SUPABASE_SERVICE_ROLE_KEY`
+
+The submission API is intentionally public, so the current protection model is:
+
+- strict server-side validation and sanitization
+- Supabase service-role inserts that stay server-side only
+- read-only public RLS for published rows
+- request rate limiting before insert
 
 ## Local Development
 
@@ -88,6 +95,11 @@ The app now exposes a server-side submission endpoint:
 
 `POST /api/submissions`
 
+The intended flow is:
+
+1. submit through Discord with `/showcase-project`
+2. if you want to post directly, use the public `curl` request from the homepage
+
 Required header:
 
 ```http
@@ -111,9 +123,14 @@ Example request body:
 }
 ```
 
-The route validates and normalizes input before insert, only accepts `http` / `https` URLs, creates slugs server-side, and writes through Supabase using the server-side service-role key. The UI renders user content as text rather than HTML, which keeps the public surface safer from stored XSS. Because the endpoint is public, this protects against injection issues but does not by itself prevent spam or abuse.
+The endpoint also accepts the bot-style nested payload with `guild`, `channel`, `member`, and `project`, so the Discord bot can post richer metadata without needing a separate backend.
 
-It also applies a server-side rate limit before insert and returns standard `X-RateLimit-*` headers plus `Retry-After` when the limit is hit.
+The route validates and normalizes input before insert, only accepts `http` / `https` URLs, creates slugs server-side, and writes through Supabase using the server-side service-role key. The UI renders user content as text rather than HTML, which keeps the public surface safer from stored XSS. Because the endpoint is public, this protects against injection issues but does not by itself prevent spam or abuse from many distinct IPs.
+
+It also applies a server-side rate limit before insert and returns standard `X-RateLimit-*` headers plus `Retry-After` when the limit is hit. The default policy is:
+
+- `8` submissions per hour per connection fingerprint
+- `1` hour block after the limit is exceeded
 
 ## Project Shape
 
@@ -136,3 +153,4 @@ The UI reads these public fields from `public.projects`:
 - This repo is intentionally frontend-first, with one small server-side route for project submissions.
 - If Supabase is configured incorrectly, the app shows the live error instead of masking it with mock data.
 - The showcase search/filtering is client-side in this public build for simplicity.
+- Search currently matches `title`, `summary`, and `stack`, and filters by one category at a time.
