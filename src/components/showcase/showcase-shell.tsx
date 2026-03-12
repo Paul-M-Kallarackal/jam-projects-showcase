@@ -45,6 +45,11 @@ const statCards = [
 export function ShowcaseShell({ projects, error }: ShowcaseData) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
+  const [apiOrigin] = useState(() =>
+    typeof window === "undefined"
+      ? "https://jam-projects-showcase.vercel.app"
+      : window.location.origin
+  );
 
   const deferredQuery = useDeferredValue(query);
 
@@ -98,24 +103,85 @@ export function ShowcaseShell({ projects, error }: ShowcaseData) {
             </Link>
           </div>
 
-          <div className="mx-auto mt-8 max-w-6xl">
+          <div className="mx-auto mt-8 grid max-w-6xl gap-8 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
             <div className="max-w-4xl space-y-4">
               <h1 className="font-display text-5xl leading-none tracking-tight text-balance md:text-7xl">
                 A warm, searchable home for every Jam build shared here.
               </h1>
               <p className="max-w-3xl text-base leading-relaxed text-foreground/76 md:text-lg">
                 Built for builders to show what they shipped, what it does, and
-                where people can try it. Projects only appear here when their
-                creator submits them through the Discord{" "}
+                where people can try it. Projects can still come in through
+                Discord with{" "}
                 <span className="font-semibold text-foreground">
                   /showcase-project
-                </span>{" "}
-                command.
+                </span>
+                , but Discord is not required anymore.
               </p>
               <p className="max-w-3xl text-sm leading-relaxed text-foreground/66 md:text-base">
-                This is a public hobby project with a public repository, and the
-                archive is queryable by title, category, and search terms.
+                Anyone can post a project here directly through the public
+                submission API. This is a public hobby project with a public
+                repository, and the archive is queryable by title, category, and
+                search terms.
               </p>
+            </div>
+
+            <Card className="surface-glass overflow-hidden border-border/65 bg-card/84 py-0 shadow-lg">
+              <div className="border-b border-border/35 px-5 py-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                  Post directly
+                </p>
+                <h2 className="mt-2 font-display text-3xl leading-tight">
+                  Anyone can submit with one curl request.
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-foreground/72">
+                  Only `project_name` is required. GitHub link, live link,
+                  category, description, and submitted name are optional.
+                </p>
+              </div>
+
+              <CardContent className="px-0 pb-0 pt-0">
+                <div className="bg-[#243942] px-5 py-5 text-[#e6e1c5]">
+                  <pre className="overflow-x-auto text-xs leading-relaxed md:text-sm">
+                    <code>{`curl -X POST "${apiOrigin}/api/submissions" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "project_name": "Your Project",
+    "description": "What it does",
+    "category": "Creative Tools",
+    "github_url": "https://github.com/you/project",
+    "live_url": "https://your-project.example.com",
+    "submitted_by": "Your Name"
+  }'`}</code>
+                  </pre>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        <section className="px-4 pb-2 md:px-6">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-8 grid gap-4 md:grid-cols-3">
+              {statCards.map((item) => (
+                <Card
+                  key={item.label}
+                  className="surface-glass border-border/60 bg-card/76 shadow-md"
+                >
+                  <CardContent className="pt-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                      {item.label}
+                    </p>
+                    <div className="mt-4 flex items-end gap-3">
+                      <span className="font-display text-4xl leading-none">
+                        {item.accessor(projects.length, projects)}
+                      </span>
+                      <span className="pb-1 text-sm text-foreground/65">
+                        {item.suffix}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </section>
@@ -193,29 +259,6 @@ export function ShowcaseShell({ projects, error }: ShowcaseData) {
                 ) : null}
               </CardHeader>
             </Card>
-
-            <div className="mb-8 grid gap-4 md:grid-cols-3">
-              {statCards.map((item) => (
-                <Card
-                  key={item.label}
-                  className="surface-glass border-border/60 bg-card/76 shadow-md"
-                >
-                  <CardContent className="pt-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                      {item.label}
-                    </p>
-                    <div className="mt-4 flex items-end gap-3">
-                      <span className="font-display text-4xl leading-none">
-                        {item.accessor(projects.length, projects)}
-                      </span>
-                      <span className="pb-1 text-sm text-foreground/65">
-                        {item.suffix}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
 
             {error ? (
               <Card className="mb-6 border-destructive/25 bg-destructive/8 text-destructive shadow-sm">

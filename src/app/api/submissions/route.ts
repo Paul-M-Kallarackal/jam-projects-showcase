@@ -1,6 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
 
 import {
   createUniqueSlug,
@@ -18,40 +17,18 @@ function json(data: unknown, status = 200) {
   });
 }
 
-function isAuthorized(request: Request, expectedToken: string): boolean {
-  const authorization = request.headers.get("authorization");
-  if (!authorization?.startsWith("Bearer ")) {
-    return false;
-  }
-
-  const actualToken = authorization.slice("Bearer ".length);
-  const actualBuffer = Buffer.from(actualToken);
-  const expectedBuffer = Buffer.from(expectedToken);
-
-  if (actualBuffer.length !== expectedBuffer.length) {
-    return false;
-  }
-
-  return timingSafeEqual(actualBuffer, expectedBuffer);
-}
-
 export async function POST(request: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const apiBearerToken = process.env.SHOWCASE_API_BEARER_TOKEN?.trim();
 
-  if (!supabaseUrl || !serviceRoleKey || !apiBearerToken) {
+  if (!supabaseUrl || !serviceRoleKey) {
     return json(
       {
         error:
-          "Submission API is not configured. Add NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and SHOWCASE_API_BEARER_TOKEN.",
+          "Submission API is not configured. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
       },
       503
     );
-  }
-
-  if (!isAuthorized(request, apiBearerToken)) {
-    return json({ error: "Unauthorized." }, 401);
   }
 
   let body: unknown;

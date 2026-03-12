@@ -138,7 +138,7 @@ export function normalizeSubmissionBody(body: unknown): RawSubmission | null {
 
   const summary =
     sanitizeText(record.description ?? project.description, 500) ||
-    "Submitted through Discord.";
+    "Shared through Jam Projects Showcase.";
 
   const submittedBy =
     sanitizeText(

@@ -23,7 +23,6 @@ A public Next.js showcase for Jam builders to submit and share projects through 
 The read-only UI still uses only public env vars. The submission API is server-side and separately requires:
 
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `SHOWCASE_API_BEARER_TOKEN`
 
 ## Local Development
 
@@ -47,7 +46,6 @@ If Supabase env values are missing, the app shows a real setup state instead of 
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
-SHOWCASE_API_BEARER_TOKEN=...
 ```
 
 5. In Supabase, get these values from `Project Settings -> API`:
@@ -67,12 +65,11 @@ SHOWCASE_API_BEARER_TOKEN=...
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
-SHOWCASE_API_BEARER_TOKEN=...
 ```
 
 3. Redeploy after adding the variables.
 
-The browser still only sees the two `NEXT_PUBLIC_...` values. The service-role key and API bearer token stay server-side in Vercel.
+The browser still only sees the two `NEXT_PUBLIC_...` values. The service-role key stays server-side in Vercel.
 
 ## Submission API
 
@@ -83,7 +80,6 @@ The app now exposes a server-side submission endpoint:
 Required header:
 
 ```http
-Authorization: Bearer YOUR_SHOWCASE_API_BEARER_TOKEN
 Content-Type: application/json
 ```
 
@@ -104,7 +100,7 @@ Example request body:
 }
 ```
 
-The route validates and normalizes input before insert, only accepts `http` / `https` URLs, creates slugs server-side, and writes through Supabase using the server-side service-role key. The UI renders user content as text rather than HTML, which keeps the public surface safer from stored XSS.
+The route validates and normalizes input before insert, only accepts `http` / `https` URLs, creates slugs server-side, and writes through Supabase using the server-side service-role key. The UI renders user content as text rather than HTML, which keeps the public surface safer from stored XSS. Because the endpoint is public, this protects against injection issues but does not by itself prevent spam or abuse.
 
 ## Project Shape
 
